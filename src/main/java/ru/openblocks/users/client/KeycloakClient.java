@@ -3,7 +3,6 @@ package ru.openblocks.users.client;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -11,12 +10,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import ru.openblocks.users.api.dto.users.create.request.UserCreateRequest;
 import ru.openblocks.users.client.dto.keycloak.admintoken.response.AdminTokenResponse;
 import ru.openblocks.users.client.dto.keycloak.createuser.request.KeycloakCreateUserRequest;
 import ru.openblocks.users.config.KeycloakServiceConfig;
 import ru.openblocks.users.exception.KeycloakClientException;
-import ru.openblocks.users.service.mapper.KeycloakMapper;
 
 /**
  * Этот клиент предназначен для взаимодействия с REST API Keycloak.
@@ -25,45 +22,32 @@ import ru.openblocks.users.service.mapper.KeycloakMapper;
 @Component
 public class KeycloakClient {
 
-    private final KeycloakMapper keycloakMapper;
+    private static final String BEARER = "Bearer ";
 
     private final RestTemplate restTemplate;
 
     private final KeycloakServiceConfig keycloakServiceConfig;
 
-    private KeycloakClient keycloakClient;
-
     @Autowired
     public KeycloakClient(@Qualifier("keycloak-rest-template") RestTemplate restTemplate,
-                          KeycloakMapper keycloakMapper,
                           KeycloakServiceConfig keycloakServiceConfig) {
         this.restTemplate = restTemplate;
-        this.keycloakMapper = keycloakMapper;
         this.keycloakServiceConfig = keycloakServiceConfig;
-    }
-
-    @Lazy
-    @Autowired
-    public void setKeycloakClient(KeycloakClient keycloakClient) {
-        this.keycloakClient = keycloakClient;
     }
 
     /**
      * Создаёт нового пользователя в Keycloak.
      *
-     * @param request запрос на создание нового пользователя
+     * @param request     запрос на создание нового пользователя
+     * @param accessToken JWT-токен для создания пользователя
      */
-    public void createUser(UserCreateRequest request) {
-        final AdminTokenResponse adminTokenResponse = keycloakClient.getAdminToken();
-        final String accessToken = adminTokenResponse.getAccessToken();
-
+    public void createUser(KeycloakCreateUserRequest request, String accessToken) {
         final String url = keycloakServiceConfig.getHost()
                 + keycloakServiceConfig.getUrls().get(KeycloakServiceConfig.CREATE_USER_URL);
-        final KeycloakCreateUserRequest keycloakRequest = keycloakMapper.toCreateUserRequest(request);
-        log.info("Request to create user in Keycloak, url: {}, request: {}", url, keycloakRequest);
+        log.info("Request to create user in Keycloak, url: {}, request: {}", url, request);
 
         try {
-            restTemplate.postForObject(url, getCreateUserRequest(accessToken, keycloakRequest), Void.class);
+            restTemplate.postForObject(url, getBasicTypedHttpRequest(accessToken, request), Void.class);
         } catch (Exception ex) {
             log.error("Cannot create new user in Keycloak, reason: {}", ex.getMessage());
             throw new KeycloakClientException("Cannot create new user in Keycloak, reason: " + ex.getMessage());
@@ -88,10 +72,10 @@ public class KeycloakClient {
         }
     }
 
-    private HttpEntity<KeycloakCreateUserRequest> getCreateUserRequest(String adminToken,
-                                                                       KeycloakCreateUserRequest request) {
+    private <T> HttpEntity<T> getBasicTypedHttpRequest(String adminToken,
+                                                       T request) {
         HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken);
+        headers.set(HttpHeaders.AUTHORIZATION, BEARER + adminToken);
         return new HttpEntity<>(request, headers);
     }
 

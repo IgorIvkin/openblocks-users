@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.openblocks.users.api.dto.users.create.request.UserCreateRequest;
 import ru.openblocks.users.api.dto.users.create.response.UserCreateResponse;
-import ru.openblocks.users.client.KeycloakClient;
 import ru.openblocks.users.persistence.entity.UserDataEntity;
 import ru.openblocks.users.persistence.repository.UserDataRepository;
 import ru.openblocks.users.service.mapper.UserDataMapper;
@@ -20,7 +19,7 @@ import java.time.Instant;
 @Service
 public class UserDataService {
 
-    private final KeycloakClient keycloakClient;
+    private final KeycloakService keycloakService;
 
     private final UserDataRepository userDataRepository;
 
@@ -29,10 +28,10 @@ public class UserDataService {
     private final Clock clock = Clock.systemDefaultZone();
 
     @Autowired
-    public UserDataService(KeycloakClient keycloakClient,
+    public UserDataService(KeycloakService keycloakService,
                            UserDataRepository userDataRepository,
                            UserDataMapper userDataMapper) {
-        this.keycloakClient = keycloakClient;
+        this.keycloakService = keycloakService;
         this.userDataRepository = userDataRepository;
         this.userDataMapper = userDataMapper;
     }
@@ -51,7 +50,7 @@ public class UserDataService {
 
         // Создаём нового пользователя в Keycloak
         log.info("Create user in Keycloak");
-        keycloakClient.createUser(request);
+        keycloakService.createUser(request);
 
         // Создаём нового пользователя в БД сервиса
         log.info("Create user in database of Users common service");
