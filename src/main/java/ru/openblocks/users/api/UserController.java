@@ -2,12 +2,11 @@ package ru.openblocks.users.api;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.openblocks.users.api.dto.users.create.request.UserCreateRequest;
 import ru.openblocks.users.api.dto.users.create.response.UserCreateResponse;
+import ru.openblocks.users.api.dto.users.get.UserGetResponse;
+import ru.openblocks.users.api.dto.users.update.request.UserUpdatePasswordRequest;
 import ru.openblocks.users.service.UserDataService;
 
 @RestController
@@ -24,5 +23,20 @@ public class UserController {
     @PostMapping
     public UserCreateResponse createUser(@Valid @RequestBody UserCreateRequest request) {
         return userDataService.createUser(request);
+    }
+
+    @PutMapping("/password")
+    public void updateUserPassword(@Valid @RequestBody UserUpdatePasswordRequest request) {
+        userDataService.updatePassword(request);
+    }
+
+    @GetMapping("/{id}")
+    public UserGetResponse getById(@PathVariable Long id) {
+        return userDataService.getById(id);
+    }
+
+    @GetMapping("/user-name/{userName}")
+    public UserGetResponse getByUserName(@PathVariable String userName) {
+        return userDataService.getByUserName(userName);
     }
 }

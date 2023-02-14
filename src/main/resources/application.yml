@@ -8,7 +8,7 @@ server:
 
 spring:
   application:
-    name: open-blocks-users
+    name: openblocks-users
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/infra_users
@@ -41,11 +41,20 @@ spring:
           jwk-set-uri: http://localhost:8534/realms/infra/protocol/openid-connect/certs
           issuer-uri: http://localhost:8534/realms/infra
 
+opentracing:
+  jaeger:
+    udp-sender:
+      host: localhost
+      port: 6831
+    enable-b3-propagation: true
+
 app:
   keycloak-service:
     client-id: 'admin-cli'
     client-secret: 'W5jwTHQWUBXYaAgMPTyHwOkwL4A2yB0S'
     host: http://localhost:8534
     urls:
-      admin-token: /realms/infra/protocol/openid-connect/token
-      create-user: /admin/realms/infra/users
+      admin-token: '/realms/infra/protocol/openid-connect/token'
+      create-user: '/admin/realms/infra/users'
+      get-user-by-user-name: '/admin/realms/infra/users?username={username}'
+      update-user: '/admin/realms/infra/users/{id}'

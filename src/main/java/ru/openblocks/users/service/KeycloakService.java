@@ -4,10 +4,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.openblocks.users.api.dto.users.create.request.UserCreateRequest;
+import ru.openblocks.users.api.dto.users.update.request.UserUpdatePasswordRequest;
 import ru.openblocks.users.client.KeycloakClient;
-import ru.openblocks.users.client.dto.keycloak.admintoken.response.AdminTokenResponse;
 import ru.openblocks.users.client.dto.keycloak.createuser.request.KeycloakCreateUserRequest;
+import ru.openblocks.users.client.dto.keycloak.getuser.response.KeycloakGetUserResponse;
+import ru.openblocks.users.client.dto.keycloak.updateuser.request.KeycloakUpdateUserPasswordRequest;
+import ru.openblocks.users.exception.UserNotFoundException;
 import ru.openblocks.users.service.mapper.KeycloakMapper;
+
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Сервис предназначен для взаимодействия с Keycloak.
@@ -33,9 +39,34 @@ public class KeycloakService {
      * @param request запрос на создание нового пользователя
      */
     public void createUser(UserCreateRequest request) {
-        final AdminTokenResponse adminTokenResponse = keycloakClient.getAdminToken();
-        final String accessToken = adminTokenResponse.getAccessToken();
         final KeycloakCreateUserRequest keycloakRequest = keycloakMapper.toCreateUserRequest(request);
-        keycloakClient.createUser(keycloakRequest, accessToken);
+        keycloakClient.createUser(keycloakRequest);
+    }
+
+    /**
+     * Изменяет пользователю пароль в Keycloak.
+     *
+     * @param userName username пользователя в Keycloak
+     * @param request  запрос на изменение пароля
+     */
+    public void updateUserPassword(String userName, UserUpdatePasswordRequest request) {
+
+        // Определяем идентификатор (UUID) пользователя в Keycloak
+        final UUID userId = getUserIdByUserName(userName);
+        final KeycloakUpdateUserPasswordRequest keycloakRequest = keycloakMapper.toUpdateUserPasswordRequest(request);
+
+        keycloakClient.updateUserPassword(userId, keycloakRequest);
+    }
+
+    private UUID getUserIdByUserName(String userName) {
+        final KeycloakGetUserResponse user = keycloakClient.getUserByUserName(userName)
+                .orElseThrow(() -> UserNotFoundException.ofUserName(userName));
+        final UUID userId = user.getId();
+
+        if (Objects.isNull(userId)) {
+            throw new IllegalStateException("User ID is null in Keycloak for username: " + userName);
+        }
+
+        return userId;
     }
 }

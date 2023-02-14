@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.openblocks.users.api.dto.users.create.request.UserCreateRequest;
 import ru.openblocks.users.api.dto.users.create.response.UserCreateResponse;
+import ru.openblocks.users.api.dto.users.get.UserGetResponse;
+import ru.openblocks.users.api.dto.users.update.request.UserUpdatePasswordRequest;
+import ru.openblocks.users.exception.UserNotFoundException;
 import ru.openblocks.users.persistence.entity.UserDataEntity;
 import ru.openblocks.users.persistence.repository.UserDataRepository;
 import ru.openblocks.users.service.mapper.UserDataMapper;
@@ -64,5 +67,50 @@ public class UserDataService {
         return UserCreateResponse.builder()
                 .id(userId)
                 .build();
+    }
+
+    /**
+     * Обновляет пароль пользователя в Keycloak.
+     *
+     * @param request запрос на изменение пароля пользователя в Keycloak
+     */
+    public void updatePassword(UserUpdatePasswordRequest request) {
+
+        final String userName = request.getUserName();
+
+        log.info("Update password for user: {}", userName);
+        keycloakService.updateUserPassword(userName, request);
+    }
+
+    /**
+     * Возвращает данные пользователя по его идентификатору.
+     *
+     * @param userId идентификатор пользователя
+     * @return данные пользователя по его идентификатору
+     */
+    public UserGetResponse getById(Long userId) {
+
+        log.info("Get user by id {}", userId);
+
+        UserDataEntity user = userDataRepository.findById(userId)
+                .orElseThrow(() -> UserNotFoundException.ofUserId(userId));
+
+        return userDataMapper.toUserGetResponse(user);
+    }
+
+    /**
+     * Возвращает данные пользователя по его логину.
+     *
+     * @param userName логин пользователя
+     * @return данные пользователя по его логину
+     */
+    public UserGetResponse getByUserName(String userName) {
+
+        log.info("Get user by username {}", userName);
+
+        UserDataEntity user = userDataRepository.findByUserName(userName)
+                .orElseThrow(() -> UserNotFoundException.ofUserName(userName));
+
+        return userDataMapper.toUserGetResponse(user);
     }
 }

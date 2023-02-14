@@ -1,6 +1,7 @@
 package ru.openblocks.users.api.dto.users.create.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ public class UserCreateRequest {
     private String userName;
 
     @NotBlank
+    @Size(min = 5)
     private String password;
 
     @NotBlank

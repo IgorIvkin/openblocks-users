@@ -18,6 +18,10 @@ public class KeycloakServiceConfig {
 
     public static final String CREATE_USER_URL = "create-user";
 
+    public static final String GET_USER_BY_USERNAME = "get-user-by-user-name";
+
+    public static final String UPDATE_USER = "update-user";
+
     @NotNull
     private String clientId;
 
