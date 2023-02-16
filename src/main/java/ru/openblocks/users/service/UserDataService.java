@@ -2,7 +2,9 @@ package ru.openblocks.users.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import ru.openblocks.users.api.dto.users.create.request.UserCreateRequest;
 import ru.openblocks.users.api.dto.users.create.response.UserCreateResponse;
 import ru.openblocks.users.api.dto.users.get.UserGetResponse;
@@ -10,10 +12,14 @@ import ru.openblocks.users.api.dto.users.update.request.UserUpdatePasswordReques
 import ru.openblocks.users.exception.UserNotFoundException;
 import ru.openblocks.users.persistence.entity.UserDataEntity;
 import ru.openblocks.users.persistence.repository.UserDataRepository;
+import ru.openblocks.users.persistence.specification.UserSpecification;
 import ru.openblocks.users.service.mapper.UserDataMapper;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Сервис предназначен для взаимодействия с пользователями системы.
@@ -113,4 +119,46 @@ public class UserDataService {
 
         return userDataMapper.toUserGetResponse(user);
     }
+
+    /**
+     * Возвращает пользователей по поисковому запросу. Если в поисковом запросе указано
+     * одно слово, оно считается фамилией пользователя. Если в поисковом запросе указано
+     * несколько слов, то фамилией всегда считается первое из указанных слов.
+     *
+     * @param searchText поисковый запрос на поиск пользователей
+     * @return список пользователей
+     */
+    public List<UserGetResponse> getBySearch(String searchText) {
+
+        log.info("Search users by query: {}", searchText);
+
+        if (Objects.isNull(searchText) || searchText.length() < 3) {
+            return List.of();
+        } else {
+
+            // Разбиваем запрос на отдельные слова, пропускаем пробельные символы
+            List<String> queryParts =
+                    Arrays.stream(searchText.split(" "))
+                            .map(String::trim)
+                            .filter(StringUtils::hasText)
+                            .toList();
+
+            if (queryParts.isEmpty()) {
+                return List.of();
+            } else {
+
+                // Первое из заданных слов будет считаться фамилией, остальные слова могут быть расположены
+                // в любой части данных ФИО: имени, фамилии или отчестве, но если слов много, то все они должны
+                // быть представлены в результате
+                String firstQueryPart = queryParts.get(0);
+                Specification<UserDataEntity> specification =
+                        UserSpecification.byLastName(firstQueryPart)
+                                .and(UserSpecification.byQueryWords(queryParts));
+
+                List<UserDataEntity> users = userDataRepository.findAll(specification);
+                return users.stream().map(userDataMapper::toUserGetResponse).toList();
+            }
+        }
+    }
+
 }

@@ -9,6 +9,8 @@ import ru.openblocks.users.api.dto.users.get.UserGetResponse;
 import ru.openblocks.users.api.dto.users.update.request.UserUpdatePasswordRequest;
 import ru.openblocks.users.service.UserDataService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -38,5 +40,10 @@ public class UserController {
     @GetMapping("/user-name/{userName}")
     public UserGetResponse getByUserName(@PathVariable String userName) {
         return userDataService.getByUserName(userName);
+    }
+
+    @GetMapping("/search")
+    public List<UserGetResponse> getBySearch(@RequestParam String searchText) {
+        return userDataService.getBySearch(searchText);
     }
 }
