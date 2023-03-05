@@ -32,7 +32,7 @@ public class UserController {
         userDataService.updatePassword(request);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/user-id/{id}")
     public UserGetResponse getById(@PathVariable Long id) {
         return userDataService.getById(id);
     }
